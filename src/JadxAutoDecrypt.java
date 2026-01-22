@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 
 public class JadxAutoDecrypt {
     private static final Pattern OBFUSCATED_STRING_PATTERN = Pattern.compile(
-        "h0\\.e\\.a\\s*\\(\\s*new\\s+byte\\s*\\[\\s*]\\s*\\{([\\s\\S]*?)\\}\\s*\\)"
+        "(?:\\b[\\w$]+\\.)*a\\s*\\(\\s*new\\s+byte\\s*\\[\\s*]\\s*\\{([\\s\\S]*?)\\}\\s*\\)"
     );
     
     public static void main(String[] args) throws Exception {
