@@ -6,8 +6,15 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
 public class JadxAutoDecrypt {
-    private static final Pattern OBFUSCATED_STRING_PATTERN = Pattern.compile(
-        "(?:\\b[\\w$]+\\.)*a\\s*\\(\\s*new\\s+byte\\s*\\[\\s*]\\s*\\{([\\s\\S]*?)\\}\\s*\\)"
+    private static final List<Pattern> OBFUSCATED_STRING_PATTERNS = List.of(
+        Pattern.compile(
+            "(?:\\b[\\w$]+\\.)*a\\s*\\(\\s*new\\s+byte\\s*\\[\\s*]\\s*\\{([\\s\\S]*?)\\}\\s*\\)",
+            Pattern.MULTILINE
+        ),
+        Pattern.compile(
+            "(?:\\b[\\w$]+\\.)+\\w+\\s*\\(\\s*new\\s+byte\\s*\\[\\s*]\\s*\\{([\\s\\S]*?)\\}\\s*\\)",
+            Pattern.MULTILINE
+        )
     );
     
     public static void main(String[] args) throws Exception {
@@ -20,22 +27,39 @@ public class JadxAutoDecrypt {
     static void processFile(Path p) {
         try {
             String code = Files.readString(p);
-            Matcher m = OBFUSCATED_STRING_PATTERN.matcher(code);
-            StringBuffer sb = new StringBuffer();
 
-            while (m.find()) {
-                byte[] blob = parseBytes(m.group(1));
-                System.out.println("Foud Obfuscated String in file " + p + ": \n" + Arrays.toString(blob));
-                String decrypted = decrypt(blob)
+            for (Pattern pattern : OBFUSCATED_STRING_PATTERNS) {
+                Matcher m = pattern.matcher(code);
+                StringBuffer sb = new StringBuffer();
+                
+                while (m.find()) {
+                    byte[] blob = parseBytes(m.group(1));
+
+                    if (blob.length < 16) {
+                        continue;
+                    }
+                    
+                    System.out.println(
+                        "Foud Obfuscated String in file " + p + ": \n" + 
+                        Arrays.toString(blob)
+                    );
+                    
+                    String decrypted = decrypt(blob)
                         .replace("\\", "\\\\")
                         .replace("\"", "\\\"");
-                m.appendReplacement(
-                    sb, 
-                    Matcher.quoteReplacement("\"" + decrypted + "\""));
+                    
+                    m.appendReplacement(
+                        sb, 
+                        Matcher.quoteReplacement("\"" + decrypted + "\"")
+                    );
+                }
+                
+                m.appendTail(sb);
+                code = sb.toString();
             }
             
-            m.appendTail(sb);
-            Files.writeString(p, sb.toString());
+            Files.writeString(p, code);
+
         } catch (Exception e) {
             System.err.println("Failed processing file: " + p + " -> " + e.getMessage());
         }
