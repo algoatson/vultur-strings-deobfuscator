@@ -1,4 +1,4 @@
-# Vultur String Deobfuscator
+# Vultur Strings Deobfuscator
 Automatic string deobfuscation tool for the Vultur Android banking trojan (Payload #2 and #3)
 
 This tool scans jadx-generated `.java` source files, detects Vultur’s AES-based string obfuscation pattern, decrypts the embedded byte arrays, and replaces them inline with plaintext strings.
